@@ -51,6 +51,7 @@ class Project:
         """
 
         self.name = name
+        self.org = "nuime-build"
         self.repository = repository
         self.branch = branch
         self.download_path = download_path
@@ -75,7 +76,7 @@ class Project:
 
         downloader = Downloader()
 
-        download_url = "https://github.com/codesmithyide/" + \
+        download_url = "https://github.com/" + self.org + "/" + \
                        self.repository + "/archive/" + self.branch + ".zip"
 
         # The archive is installed at the exact extract_path. Projects that
@@ -274,7 +275,7 @@ class libgit2Project(Project):
         # same download is installed into both a Win32 and an x64 directory.
         if self.target.platform == "Linux":
             return super().create_downloader()
-        download_url = "https://github.com/codesmithyide/" + \
+        download_url = "https://github.com/" + self.org + "/" + \
                        self.repository + "/archive/" + self.branch + ".zip"
         downloader = Downloader()
         downloader.downloads.append(
@@ -294,7 +295,7 @@ class wxWidgetsProject(Project):
     def create_downloader(self):
         downloader = super().create_downloader()
         modules = ["zlib", "libpng", "libexpat", "libjpeg-turbo", "libtiff"]
-        url_prefix = "https://github.com/codesmithyide/"
+        url_prefix = "https://github.com/" + self.org + "/"
         url_suffix = "/archive/wx.zip"
         src = self.extract_path + "/src"
         for module in modules:
@@ -454,9 +455,9 @@ class Projects:
             "DiplodocusEmbeddedDocumentDB.sln",
             False)
         self._add_codesmithyide_project(
-            "CodeSmithyIDE/BuildToolchains",
+            "Nuime/BuildToolchains",
             "build-toolchains",
-            "build-files/$(compiler_short_name)/CodeSmithyBuildToolchains.sln",
+            "build-files/$(compiler_short_name)/nuime_buildtoolchains.sln",
             False)
         self._add_codesmithyide_project(
             "CodeSmithyIDE/BuildFiles",
