@@ -284,50 +284,6 @@ class libgit2Project(Project):
                      [self.extract_path + "/Win32", self.extract_path + "/x64"]))
         return downloader
 
-class wxWidgetsProject(Project):
-    def __init__(self, download_path, build_dir):
-        super().__init__("wxWidgets", "wxWidgets", "master", download_path,
-                         build_dir + "/wxWidgets", "WXWIN",
-                         build_dir + "/wxWidgets",
-                         build_dir + "/wxWidgets/build/msw/wx_$(compiler_short_name).sln",
-                         False)
-
-    def create_downloader(self):
-        downloader = super().create_downloader()
-        modules = ["zlib", "libpng", "libexpat", "libjpeg-turbo", "libtiff"]
-        url_prefix = "https://github.com/" + self.org + "/"
-        url_suffix = "/archive/wx.zip"
-        src = self.extract_path + "/src"
-        for module in modules:
-            downloader.downloads.append(
-                Download(module, url_prefix + module + url_suffix,
-                         self.download_path, "wx",
-                         [src + "/" + module]))
-        return downloader
-
-    def unzip(self, downloader):
-        super().unzip(downloader)
-        src = self.extract_path + "/src"
-        downloader.unzip("zlib")
-        downloader.unzip("libpng")
-        os.rmdir(src + "/png")
-        os.rename(src + "/libpng", src + "/png")
-        downloader.unzip("libexpat")
-        os.rmdir(src + "/expat")
-        os.rename(src + "/libexpat", src + "/expat")
-        downloader.unzip("libjpeg-turbo")
-        os.rmdir(src + "/jpeg")
-        os.rename(src + "/libjpeg-turbo", src + "/jpeg")
-        downloader.unzip("libtiff")
-        os.rmdir(src + "/tiff")
-        os.rename(src + "/libtiff", src + "/tiff")
-
-    def _resolve_makefile_path(self, compiler, architecture_dir_name):
-        return re.sub(r"\$\(compiler_short_name\)",
-                      compiler.short_name.lower(),
-                      self.makefile_path)
-
-
 class Test:
     def __init__(self, project_name, executable):
         self.project_name = project_name
@@ -341,11 +297,11 @@ class Projects:
         self.projects = []
         # fmt is a dependency of all the other projects so it is built first.
         self.projects.append(CMakeLibraryProject(
-            "fmt", "ishiko-cpp_fmt", "master", config.downloads_dir,
+            "fmt", "ishiko-third-party_fmt", "master", config.downloads_dir,
             config.build_dir, "FMT_ROOT", "fmt", target))
         self.projects.append(Project(
             "pugixml",
-            "ishiko-cpp_pugixml",
+            "ishiko-third-party_pugixml",
             "master",
             config.downloads_dir,
             config.build_dir + "/pugixml",
@@ -505,28 +461,6 @@ class Projects:
             "Makefiles/$(compiler_short_name)/IshikoFileTypes.sln",
             True)
         self._add_codesmithyide_project(
-            "CodeSmithyIDE/CodeSmithy/UICore",
-            "codesmithy",
-            "UICore/Makefiles/$(compiler_short_name)/CodeSmithyUICore.sln",
-            True)
-        self.projects.append(wxWidgetsProject(config.downloads_dir, config.build_dir))
-        self._add_codesmithyide_project(
-            "CodeSmithyIDE/CodeSmithy/UIElements",
-            "codesmithy",
-            "UIElements/Makefiles/$(compiler_short_name)/CodeSmithyUIElements.sln",
-            True)
-        self._add_codesmithyide_project(
-            "CodeSmithyIDE/CodeSmithy/UIImplementation",
-            "codesmithy",
-            "UIImplementation/Makefiles/$(compiler_short_name)/"
-            "CodeSmithyUIImplementation.sln",
-            True)
-        self._add_codesmithyide_project(
-            "CodeSmithyIDE/CodeSmithy/UI",
-            "codesmithy",
-            "UI/Makefiles/$(compiler_short_name)/CodeSmithy.sln",
-            True)
-        self._add_codesmithyide_project(
             "CodeSmithyIDE/CodeSmithy/Tests/Core",
             "codesmithy",
             "core/tests/build-files/$(compiler_short_name)/"
@@ -537,12 +471,6 @@ class Projects:
             "codesmithy",
             "Tests/Make/Makefiles/$(compiler_short_name)/"
             "CodeSmithyMakeTests.sln",
-            True)
-        self._add_codesmithyide_project(
-            "CodeSmithyIDE/CodeSmithy/Tests/UICore",
-            "codesmithy",
-            "Tests/UICore/Makefiles/$(compiler_short_name)/"
-            "CodeSmithyUICoreTests.sln",
             True)
         self.tests = []
         self.tests.append(Test("CodeSmithyIDE/CodeSmithy/Tests/Core",
@@ -580,14 +508,14 @@ class Projects:
 
     def build(self, build_tools, build_configuration,
               input, state, output):
-        # For now only bypass pugixml, libgit2 and wxWidgets because they
+        # For now only bypass pugixml and libgit2 because they
         # are independent from the rest. More complex logic is required to
         # handle the other projects.
         # Unless we have built all project succesfully.
         for project in self.projects:
             if state.build_complete:
                 project.built = True
-            elif project.name in ["libgit2", "pugixml", "wxWidgets"]:
+            elif project.name in ["libgit2", "pugixml"]:
                 if project.name in state.built_projects:
                     project.built = True
         for project in self.projects:
