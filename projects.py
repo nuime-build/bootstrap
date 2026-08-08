@@ -330,10 +330,10 @@ class Projects:
 #            "Ishiko/Time",
 #            "ishiko-cpp_time",
 #            "build-files/$(compiler_short_name)/IshikoTime.sln")
-#        self._add_ishiko_project(
-#            "Ishiko/Process",
-#            "ishiko-cpp_process",
-#            "build-files/$(compiler_short_name)/IshikoProcess.sln")
+        self._add_ishiko_project(
+            "Ishiko/Process",
+            "ishiko-cpp_process",
+            "build-files/$(compiler_short_name)/IshikoProcess.sln")
         self._add_ishiko_project(
             "Ishiko/IO",
             "ishiko-cpp_io",
