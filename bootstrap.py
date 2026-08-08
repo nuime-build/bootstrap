@@ -13,7 +13,6 @@ from dependencies import Dependencies
 from projects import Projects
 from cmake import CMake
 from compilers import Compilers
-from codesmithymake import CodeSmithyMake
 from build import BuildTools, BuildConfiguration
 from config import Config
 from utils import Utils
@@ -96,9 +95,7 @@ def main_bootstrap_build(args, input, state, output, config):
         cmake = CMake(compiler.cmake_generator, compiler.cmake_architecture, config)
         cmake.install(target, state, output)
 
-        codesmithymake = CodeSmithyMake(target.architecture, config)
-
-        build_tools = BuildTools(cmake, compiler, codesmithymake)
+        build_tools = BuildTools(cmake, compiler)
         
         projects.build(build_tools, build_configuration,
                        input, state, output)

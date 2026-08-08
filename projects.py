@@ -21,8 +21,7 @@ class Project:
                  extract_path: str,
                  env_var_name: str,
                  env_var_value: str,
-                 makefile_path: Optional[str],
-                 use_codesmithy_make: bool):
+                 makefile_path: Optional[str]):
         """
         Parameters
         ----------
@@ -46,8 +45,6 @@ class Project:
         makefile_path : str, optional
             The exact path of the makefile used to build the project. None if
             the project only needs to be downloaded.
-        use_codesmithy_make : bool
-            Whether CodeSmithyMake should be used to build the project.
         """
 
         self.name = name
@@ -59,7 +56,6 @@ class Project:
         self.env_var_name = env_var_name
         self.env_var_value = env_var_value
         self.makefile_path = makefile_path
-        self.use_codesmithy_make = use_codesmithy_make
         self.cmake_generation_args = []
 
         self.built = False
@@ -129,18 +125,12 @@ class Project:
             else:
                 cmake = build_tools.cmake
                 compiler = build_tools.compiler
-                codesmithymake = build_tools.codesmithymake
                 build_configuration = BuildConfiguration(parent_build_configuration)
                 build_configuration.cmake_generation_args.extend(self.cmake_generation_args)
                 resolved_makefile_path = self._resolve_makefile_path(compiler, build_configuration.architecture_dir_name)
                 if not os.path.exists(resolved_makefile_path):
                     raise RuntimeError(resolved_makefile_path + " not found")
-                if self.use_codesmithy_make:
-                    print("    Using CodeSmithyMake")
-                    codesmithymake.build(compiler, resolved_makefile_path,
-                                         build_configuration.codesmithymake_configuration,
-                                         input)
-                elif self.makefile_path.endswith("/CMakeLists.txt"):
+                if self.makefile_path.endswith("/CMakeLists.txt"):
                     log = self.name + "_build.log"
                     print("    Using CMake, build log: " + log)
                     cmake.build(resolved_makefile_path, build_configuration,
@@ -212,7 +202,7 @@ class CMakeLibraryProject(Project):
         extract_path = build_dir + "/" + name
         super().__init__(name, repository, branch, download_path,
                          extract_path, env_var_name, extract_path,
-                         extract_path + "/CMakeLists.txt", False)
+                         extract_path + "/CMakeLists.txt")
         self.library_name = library_name
         self.target = target
 
@@ -265,7 +255,7 @@ class libgit2Project(Project):
         super().__init__("libgit2", "libgit2_libgit2", "main", download_path,
                          build_dir + "/libgit2", "LIBGIT2",
                          build_dir + "/libgit2",
-                         build_dir + "/libgit2/$(arch)/CMakeLists.txt", False)
+                         build_dir + "/libgit2/$(arch)/CMakeLists.txt")
         self.target = target
         self.cmake_generation_args = ["-DBUILD_SHARED_LIBS=OFF",
                                       "-DSTATIC_CRT=OFF"]
@@ -307,8 +297,7 @@ class Projects:
 #            config.build_dir + "/pugixml",
 #            "PUGIXML_ROOT",
 #            config.build_dir + "/pugixml",
-#            None,
-#            False))
+#            None))
         self.projects.append(CMakeLibraryProject(
             "yaml-cpp", "ishiko-third-party_yaml-cpp", "master", config.downloads_dir,
             config.build_dir, "YAML_CPP_ROOT", "yaml-cpp", target))
@@ -316,170 +305,124 @@ class Projects:
         self._add_ishiko_project(
             "Ishiko/BasePlatform",
             "ishiko-cpp_base-platform",
-            "build-files/$(compiler_short_name)/IshikoBasePlatform.sln",
-            False)
+            "build-files/$(compiler_short_name)/IshikoBasePlatform.sln")
         self._add_ishiko_project(
             "Ishiko/Errors",
             "ishiko-cpp_errors",
-            "build-files/$(compiler_short_name)/IshikoErrors.sln",
-            False)
+            "build-files/$(compiler_short_name)/IshikoErrors.sln")
         self._add_ishiko_project(
             "Ishiko/Memory",
             "ishiko-cpp_memory",
-            "build-files/$(compiler_short_name)/IshikoMemory.sln",
-            False)
+            "build-files/$(compiler_short_name)/IshikoMemory.sln")
 #        self._add_ishiko_project(
 #            "Ishiko/Types",
 #            "ishiko-cpp_types",
-#            "build-files/$(compiler_short_name)/IshikoTypes.sln",
-#            False)
+#            "build-files/$(compiler_short_name)/IshikoTypes.sln")
 #        self._add_ishiko_project(
 #            "Ishiko/Collections",
 #            "ishiko-cpp_collections",
-#            "build-files/$(compiler_short_name)/IshikoCollections.sln",
-#            False)
+#            "build-files/$(compiler_short_name)/IshikoCollections.sln")
         self._add_ishiko_project(
             "Ishiko/Text",
             "ishiko-cpp_text",
-            "build-files/$(compiler_short_name)/IshikoText.sln",
-            False)
+            "build-files/$(compiler_short_name)/IshikoText.sln")
 #        self._add_ishiko_project(
 #            "Ishiko/Time",
 #            "ishiko-cpp_time",
-#            "build-files/$(compiler_short_name)/IshikoTime.sln",
-#            False)
-#        self._add_ishiko_project(
-#            "Ishiko/Process",
-#            "ishiko-cpp_process",
-#            "build-files/$(compiler_short_name)/IshikoProcess.sln",
-#            False)
+#            "build-files/$(compiler_short_name)/IshikoTime.sln")
+        self._add_ishiko_project(
+            "Ishiko/Process",
+            "ishiko-cpp_process",
+            "build-files/$(compiler_short_name)/IshikoProcess.sln")
         self._add_ishiko_project(
             "Ishiko/IO",
             "ishiko-cpp_io",
-            "build-files/$(compiler_short_name)/IshikoIO.sln",
-            False)
+            "build-files/$(compiler_short_name)/IshikoIO.sln")
         self._add_ishiko_project(
             "Ishiko/FileSystem",
             "ishiko-cpp_filesystem",
-            "build-files/$(compiler_short_name)/IshikoFileSystem.sln",
-            False)
+            "build-files/$(compiler_short_name)/IshikoFileSystem.sln")
         self._add_ishiko_project(
             "Ishiko/TidyYAML",
             "ishiko-cpp_tidy-yaml",
-            "build-files/$(compiler_short_name)/ishiko_tidyyaml.sln",
-            False)
+            "build-files/$(compiler_short_name)/ishiko_tidyyaml.sln")
         self._add_ishiko_project(
             "Ishiko/Configuration",
             "ishiko-cpp_configuration",
-            "build-files/$(compiler_short_name)/IshikoConfiguration.sln",
-            False)
+            "build-files/$(compiler_short_name)/IshikoConfiguration.sln")
         self._add_ishiko_project(
             "Ishiko/Color",
             "ishiko-cpp_color",
-            "build-files/$(compiler_short_name)/IshikoColor.sln",
-            False)
+            "build-files/$(compiler_short_name)/IshikoColor.sln")
         self._add_ishiko_project(
             "Ishiko/Terminal",
             "ishiko-cpp_terminal",
-            "build-files/$(compiler_short_name)/IshikoTerminal.sln",
-            False)
+            "build-files/$(compiler_short_name)/IshikoTerminal.sln")
 #        self._add_ishiko_project(
 #            "Ishiko/Workflows",
 #            "ishiko-cpp_workflows",
-#            "build-files/$(compiler_short_name)/IshikoWorkflows.sln",
-#            False)
+#            "build-files/$(compiler_short_name)/IshikoWorkflows.sln")
         self._add_ishiko_project(
             "Ishiko/UUIDs",
             "ishiko-cpp_uuids",
-            "build-files/$(compiler_short_name)/IshikoUUIDs.sln",
-            False)
-#        self._add_diplodocusdb_project(
-#            "DiplodocusDB/Core",
-#            "diplodocusdb_core",
-#            "build-files/$(compiler_short_name)/DiplodocusDBCore.sln",
-#            False)
-#        self._add_diplodocusdb_project(
-#            "DiplodocusDB/PhysicalStorage",
-#            "diplodocusdb_physical-storage",
-#            "build-files/$(compiler_short_name)/DiplodocusDBPhysicalStorage.sln",
-#            False)
-#        self._add_diplodocusdb_project(
-#            "DiplodocusDB/EmbeddedDocumentDB/StorageEngine",
-#            "diplodocusdb_embedded-document-db",
-#            "storage-engine/build-files/$(compiler_short_name)/"
-#            "DiplodocusEmbeddedDocumentDBStorageEngine.sln",
-#            False)
-#        self._add_diplodocusdb_project(
-#            "DiplodocusDB/EmbeddedDocumentDB/Database",
-#            "diplodocusdb_embedded-document-db",
-#            "database/build-files/$(compiler_short_name)/"
-#            "DiplodocusEmbeddedDocumentDB.sln",
-#            False)
-#        self._add_codesmithyide_project(
-#            "Nuime/BuildToolchains",
-#            "build-toolchains",
-#            "build-files/$(compiler_short_name)/nuime_buildtoolchains.sln",
-#            False)
+            "build-files/$(compiler_short_name)/IshikoUUIDs.sln")
+        self._add_nuime_project(
+            "Nuime/BuildToolchains",
+            "build-toolchains",
+            "build-files/$(compiler_short_name)/nuime_buildtoolchains.sln")
         self._add_nuime_project(
             "Nuime/BuildFiles",
             "build-files",
-            "build-files/$(compiler_short_name)/nuime_buildfiles.sln",
-            False)
+            "build-files/$(compiler_short_name)/nuime_buildfiles.sln")
 #        self._add_codesmithyide_project(
 #            "CodeSmithyIDE/VersionControl/Git",
 #            "version-control",
-#            "git/build-files/$(compiler_short_name)/CodeSmithyGit.sln",
-#            False)
+#            "git/build-files/$(compiler_short_name)/CodeSmithyGit.sln")
         self._add_nuime_project(
             "Nuime/Library",
             "nuime",
-            "library/build-files/$(compiler_short_name)/nuime_lib.sln",
-            False)
+            "library/build-files/$(compiler_short_name)/nuime_lib.sln")
         self._add_nuime_project(
             "Nuime/CLI",
             "nuime",
-            "cli/build-files/$(compiler_short_name)/nuime_cli.sln",
-            False)
+            "cli/build-files/$(compiler_short_name)/nuime_cli.sln")
 #        self._add_codesmithyide_project(
 #            "CodeSmithyIDE/CodeSmithy/Core",
 #            "codesmithy",
-#            "core/build-files/$(compiler_short_name)/CodeSmithyCore.sln",
-#            False)
+#            "core/build-files/$(compiler_short_name)/CodeSmithyCore.sln")
 #        self._add_codesmithyide_project(
 #            "CodeSmithyIDE/CodeSmithy/CLI",
 #            "codesmithy",
-#            "cli/build-files/$(compiler_short_name)/CodeSmithyCLI.sln",
-#            False)
-#        self._add_ishiko_project(
-#            "Ishiko/TestFramework/Core",
-#            "ishiko-cpp_test-framework",
-#            "core/build-files/$(compiler_short_name)/IshikoTestFrameworkCore.sln",
-#            True)
+#            "cli/build-files/$(compiler_short_name)/CodeSmithyCLI.sln")
+        self._add_ishiko_project(
+            "Ishiko/TestFramework/Core",
+            "ishiko-cpp_test-framework",
+            "core/build-files/$(compiler_short_name)/IshikoTestFrameworkCore.sln")
 #        self._add_ishiko_project(
 #            "Ishiko/WindowsRegistry",
 #            "ishiko-cpp_windows-registry",
-#            "Makefiles/$(compiler_short_name)/IshikoWindowsRegistry.sln",
-#            True)
+#            "Makefiles/$(compiler_short_name)/IshikoWindowsRegistry.sln")
 #        self._add_ishiko_project(
 #            "Ishiko/FileTypes",
 #            "ishiko-cpp_file-types",
-#            "Makefiles/$(compiler_short_name)/IshikoFileTypes.sln",
-#            True)
+#            "Makefiles/$(compiler_short_name)/IshikoFileTypes.sln")
 #        self._add_codesmithyide_project(
 #            "CodeSmithyIDE/CodeSmithy/Tests/Core",
 #            "codesmithy",
 #            "core/tests/build-files/$(compiler_short_name)/"
-#            "CodeSmithyCoreTests.sln",
-#            True)
+#            "CodeSmithyCoreTests.sln")
 #        self._add_codesmithyide_project(
 #            "CodeSmithyIDE/CodeSmithy/Tests/Make",
 #            "codesmithy",
 #            "Tests/Make/Makefiles/$(compiler_short_name)/"
-#            "CodeSmithyMakeTests.sln",
-#            True)
+#            "CodeSmithyMakeTests.sln")
+        self._add_nuime_project(
+            "Nuime/Tests/CLI",
+            "nuime",
+            "cli/tests/build-files/$(compiler_short_name)/nuime_cli_tests.sln")
         self.tests = []
-#        self.tests.append(Test("CodeSmithyIDE/CodeSmithy/Tests/Core",
-#                               "CodeSmithyCoreTests.exe"))
+        self.tests.append(Test("Nuime/Tests/CLI",
+                               "nuime_cli_tests.exe"))
         self._init_downloader()
 
     def get(self, name):
@@ -554,8 +497,7 @@ class Projects:
     def _add_ishiko_project(self,
                             name: str,
                             repository: str,
-                            makefile_path: Optional[str],
-                            use_codesmithy_make: bool):
+                            makefile_path: Optional[str]):
         """Adds a project from the ishiko-cpp namespace.
 
         The install location is derived from the repository name: the '_'
@@ -594,58 +536,12 @@ class Projects:
                                      self.config.downloads_dir,
                                      extract_path, "ISHIKO_CPP_ROOT",
                                      namespace_path,
-                                     makefile_path, use_codesmithy_make))
-
-    def _add_diplodocusdb_project(self,
-                                  name: str,
-                                  repository: str,
-                                  makefile_path: Optional[str],
-                                  use_codesmithy_make: bool):
-        """Adds a project from the diplodocusdb namespace.
-
-        The install location is derived from the repository name: the '_'
-        separates the namespace from the repository name, so diplodocusdb_core
-        is the core repository of the diplodocusdb namespace and is unzipped at
-        <build_dir>/diplodocusdb/core.
-
-        This layout is the one the projects expect: they refer to their
-        dependencies as $(DIPLODOCUSDB_ROOT)/<repository name>, so
-        DIPLODOCUSDB_ROOT points at the namespace directory and each repository
-        sits directly below it under its own name.
-
-        Parameters
-        ----------
-        makefile_path : str, optional
-            The path of the makefile relative to the root of the extracted
-            repository. None if the project only needs to be downloaded.
-
-        Raises
-        ------
-        RuntimeError
-            If the repository is not a repository of the diplodocusdb
-            namespace.
-        """
-
-        namespace, separator, repository_name = repository.partition("_")
-        if (separator != "_") or (namespace != "diplodocusdb"):
-            exception_text = repository + " is not a repository of the " + \
-                             "diplodocusdb namespace"
-            raise RuntimeError(exception_text)
-        namespace_path = self.config.build_dir + "/diplodocusdb"
-        extract_path = namespace_path + "/" + repository_name
-        if makefile_path is not None:
-            makefile_path = extract_path + "/" + makefile_path
-        self.projects.append(Project(name, repository, "main",
-                                     self.config.downloads_dir,
-                                     extract_path, "DIPLODOCUSDB_ROOT",
-                                     namespace_path,
-                                     makefile_path, use_codesmithy_make))
+                                     makefile_path))
 
     def _add_codesmithyide_project(self,
                                    name: str,
                                    repository: str,
-                                   makefile_path: Optional[str],
-                                   use_codesmithy_make: bool):
+                                   makefile_path: Optional[str]):
         """Adds a project from the codesmithyide namespace.
 
         Unlike the repositories of the other namespaces the ones of the
@@ -684,13 +580,12 @@ class Projects:
                                      self.config.downloads_dir,
                                      extract_path, "CODESMITHYIDE_ROOT",
                                      namespace_path,
-                                     makefile_path, use_codesmithy_make))
+                                     makefile_path))
 
     def _add_nuime_project(self,
                            name: str,
                            repository: str,
-                           makefile_path: Optional[str],
-                           use_codesmithy_make: bool):
+                           makefile_path: Optional[str]):
         """Adds a project from the nuime-build namespace.
 
         Like the repositories of the codesmithyide namespace the ones of the
@@ -728,7 +623,7 @@ class Projects:
                                      self.config.downloads_dir,
                                      extract_path, "NUIME_ROOT",
                                      namespace_path,
-                                     makefile_path, use_codesmithy_make))
+                                     makefile_path))
 
     def _init_downloader(self):
         for project in self.projects:
