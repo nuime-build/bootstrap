@@ -3,10 +3,9 @@ from compilers import VisualStudio
 class BuildTools:
     """Provides a way to group all the available build tools in one place."""
 
-    def __init__(self, cmake, compiler, codesmithymake):
+    def __init__(self, cmake, compiler):
         self.cmake = cmake
         self.compiler = compiler
-        self.codesmithymake = codesmithymake
 
 
 class BuildConfiguration:
@@ -17,13 +16,11 @@ class BuildConfiguration:
             self.cmake_configuration = ""
             self.cmake_generation_args = []
             self.compiler_configuration = ""
-            self.codesmithymake_configuration = ""
             self.architecture_dir_name = ""
         else:
             self.cmake_configuration = build_configuration.cmake_configuration
             self.cmake_generation_args = build_configuration.cmake_generation_args.copy()
             self.compiler_configuration = build_configuration.compiler_configuration
-            self.codesmithymake_configuration = build_configuration.codesmithymake_configuration
             self.architecture_dir_name = build_configuration.architecture_dir_name
 
     def select_configuration(self, architecture, compiler, input, state):
@@ -36,11 +33,6 @@ class BuildConfiguration:
             else:
                 self.architecture_dir_name = "Win32"
             self.compiler_configuration += self.architecture_dir_name
-        self.codesmithymake_configuration = "Microsoft Windows "
-        if architecture == "64":
-            self.codesmithymake_configuration += "x86_64"
-        else:
-            self.codesmithymake_configuration += "x86"
 
     def _select_compiler_configuration(self, compiler, input, state):
         compiler_configuration = None
