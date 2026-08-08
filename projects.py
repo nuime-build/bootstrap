@@ -1,5 +1,6 @@
 from typing import Optional
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -57,6 +58,11 @@ class Project:
         self.env_var_value = env_var_value
         self.makefile_path = makefile_path
         self.cmake_generation_args = []
+        # Directories (absolute paths) whose files must be rewritten with
+        # Windows (CRLF) line endings after extraction. The archives keep the
+        # repository's Unix line endings, which breaks tests that compare their
+        # output against reference files byte for byte.
+        self.crlf_dirs = []
 
         self.built = False
 
@@ -98,6 +104,30 @@ class Project:
         """
 
         downloader.unzip(self.repository)
+        # The archives keep the repository's Unix line endings. Only Windows
+        # needs them rewritten to CRLF; on other platforms the reference files
+        # are already correct.
+        if platform.system() == "Windows":
+            for crlf_dir in self.crlf_dirs:
+                self._convert_to_crlf(crlf_dir)
+
+    @staticmethod
+    def _convert_to_crlf(directory: str):
+        """Rewrites every file under directory with CRLF line endings.
+
+        Existing CRLF endings are preserved (they are not doubled), so this is
+        safe to run more than once.
+        """
+
+        for root, _, files in os.walk(directory):
+            for file_name in files:
+                file_path = os.path.join(root, file_name)
+                with open(file_path, "rb") as file:
+                    data = file.read()
+                converted = data.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+                if converted != data:
+                    with open(file_path, "wb") as file:
+                        file.write(converted)
 
     def build(self, build_tools: BuildTools,
               parent_build_configuration: BuildConfiguration,
@@ -286,18 +316,18 @@ class Projects:
         self.downloader = Downloader()
         self.projects = []
         # fmt is a dependency of all the other projects so it is built first.
-#        self.projects.append(CMakeLibraryProject(
-#            "fmt", "ishiko-third-party_fmt", "master", config.downloads_dir,
-#            config.build_dir, "FMT_ROOT", "fmt", target))
-#        self.projects.append(Project(
-#            "pugixml",
-#            "ishiko-third-party_pugixml",
-#            "master",
-#            config.downloads_dir,
-#            config.build_dir + "/pugixml",
-#            "PUGIXML_ROOT",
-#            config.build_dir + "/pugixml",
-#            None))
+        self.projects.append(CMakeLibraryProject(
+            "fmt", "ishiko-third-party_fmt", "master", config.downloads_dir,
+            config.build_dir, "FMT_ROOT", "fmt", target))
+        self.projects.append(Project(
+            "pugixml",
+            "ishiko-third-party_pugixml",
+            "master",
+            config.downloads_dir,
+            config.build_dir + "/pugixml",
+            "PUGIXML_ROOT",
+            config.build_dir + "/pugixml",
+            None))
         self.projects.append(CMakeLibraryProject(
             "yaml-cpp", "ishiko-third-party_yaml-cpp", "master", config.downloads_dir,
             config.build_dir, "YAML_CPP_ROOT", "yaml-cpp", target))
@@ -314,22 +344,10 @@ class Projects:
             "Ishiko/Memory",
             "ishiko-cpp_memory",
             "build-files/$(compiler_short_name)/IshikoMemory.sln")
-#        self._add_ishiko_project(
-#            "Ishiko/Types",
-#            "ishiko-cpp_types",
-#            "build-files/$(compiler_short_name)/IshikoTypes.sln")
-#        self._add_ishiko_project(
-#            "Ishiko/Collections",
-#            "ishiko-cpp_collections",
-#            "build-files/$(compiler_short_name)/IshikoCollections.sln")
         self._add_ishiko_project(
             "Ishiko/Text",
             "ishiko-cpp_text",
             "build-files/$(compiler_short_name)/IshikoText.sln")
-#        self._add_ishiko_project(
-#            "Ishiko/Time",
-#            "ishiko-cpp_time",
-#            "build-files/$(compiler_short_name)/IshikoTime.sln")
         self._add_ishiko_project(
             "Ishiko/Process",
             "ishiko-cpp_process",
@@ -395,6 +413,26 @@ class Projects:
 #            "codesmithy",
 #            "cli/build-files/$(compiler_short_name)/CodeSmithyCLI.sln")
         self._add_ishiko_project(
+            "Ishiko/Types",
+            "ishiko-cpp_types",
+            "build-files/$(compiler_short_name)/IshikoTypes.sln")
+        self._add_ishiko_project(
+            "Ishiko/Collections",
+            "ishiko-cpp_collections",
+            "build-files/$(compiler_short_name)/IshikoCollections.sln")
+        self._add_ishiko_project(
+            "Ishiko/Time",
+            "ishiko-cpp_time",
+            "build-files/$(compiler_short_name)/IshikoTime.sln")
+        self._add_ishiko_project(
+            "Ishiko/XML",
+            "ishiko-cpp_xml",
+            "build-files/$(compiler_short_name)/IshikoXML.sln")
+        self._add_ishiko_project(
+            "Ishiko/Diff",
+            "ishiko-cpp_diff",
+            "build-files/$(compiler_short_name)/IshikoDiff.sln")
+        self._add_ishiko_project(
             "Ishiko/TestFramework/Core",
             "ishiko-cpp_test-framework",
             "core/build-files/$(compiler_short_name)/IshikoTestFrameworkCore.sln")
@@ -416,10 +454,12 @@ class Projects:
 #            "codesmithy",
 #            "Tests/Make/Makefiles/$(compiler_short_name)/"
 #            "CodeSmithyMakeTests.sln")
-        self._add_nuime_project(
+        nuime_cli_tests = self._add_nuime_project(
             "Nuime/Tests/CLI",
             "nuime",
             "cli/tests/build-files/$(compiler_short_name)/nuime_cli_tests.sln")
+        nuime_cli_tests.crlf_dirs.append(
+            nuime_cli_tests.extract_path + "/cli/tests/reference")
         self.tests = []
         self.tests.append(Test("Nuime/Tests/CLI",
                                "nuime_cli_tests.exe"))
@@ -479,19 +519,29 @@ class Projects:
             output.next_step()
         state.set_build_complete()
 
-    def test(self, compiler, architecture_dir_name, input):
+    def test(self, compiler, build_configuration, input):
+        architecture_dir_name = build_configuration.architecture_dir_name
         for test in self.tests:
-            # TODO
-            executable_path = self.config.build_dir + "/" + test.project_name + \
-                              "/Makefiles/vc15/x64/Debug/" + test.executable
+            project = self.get(test.project_name)
+            # The test executable is placed next to the solution it is built
+            # from, under <solution dir>/<architecture>/<configuration>.
+            solution_path = project._resolve_makefile_path(
+                compiler, architecture_dir_name)
+            solution_dir = os.path.dirname(solution_path)
+            executable_path = solution_dir + "/" + \
+                architecture_dir_name + "/" + \
+                build_configuration.cmake_configuration + "/" + \
+                test.executable
             try:
-                subprocess.check_call([executable_path])
+                # The test executable only finds its data if it is run from the
+                # directory that holds the solution file, so use that as the
+                # working directory.
+                subprocess.check_call([executable_path], cwd=solution_dir)
             except subprocess.CalledProcessError:
                 launchIDE = input.query("    Tests failed. Do you you want to"
                                         " launch the IDE?", ["y", "n"], "n")
                 if launchIDE == "y":
-                    self.get(test.project_name).launch(compiler,
-                                                       architecture_dir_name)
+                    project.launch(compiler, architecture_dir_name)
                 raise RuntimeError(test.project_name + " tests failed.")
 
     def _add_ishiko_project(self,
@@ -619,11 +669,13 @@ class Projects:
         extract_path = namespace_path + "/" + repository
         if makefile_path is not None:
             makefile_path = extract_path + "/" + makefile_path
-        self.projects.append(Project(name, repository, "main",
-                                     self.config.downloads_dir,
-                                     extract_path, "NUIME_ROOT",
-                                     namespace_path,
-                                     makefile_path))
+        project = Project(name, repository, "main",
+                          self.config.downloads_dir,
+                          extract_path, "NUIME_ROOT",
+                          namespace_path,
+                          makefile_path)
+        self.projects.append(project)
+        return project
 
     def _init_downloader(self):
         for project in self.projects:
