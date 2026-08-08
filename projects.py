@@ -286,18 +286,18 @@ class Projects:
         self.downloader = Downloader()
         self.projects = []
         # fmt is a dependency of all the other projects so it is built first.
-#        self.projects.append(CMakeLibraryProject(
-#            "fmt", "ishiko-third-party_fmt", "master", config.downloads_dir,
-#            config.build_dir, "FMT_ROOT", "fmt", target))
-#        self.projects.append(Project(
-#            "pugixml",
-#            "ishiko-third-party_pugixml",
-#            "master",
-#            config.downloads_dir,
-#            config.build_dir + "/pugixml",
-#            "PUGIXML_ROOT",
-#            config.build_dir + "/pugixml",
-#            None))
+        self.projects.append(CMakeLibraryProject(
+            "fmt", "ishiko-third-party_fmt", "master", config.downloads_dir,
+            config.build_dir, "FMT_ROOT", "fmt", target))
+        self.projects.append(Project(
+            "pugixml",
+            "ishiko-third-party_pugixml",
+            "master",
+            config.downloads_dir,
+            config.build_dir + "/pugixml",
+            "PUGIXML_ROOT",
+            config.build_dir + "/pugixml",
+            None))
         self.projects.append(CMakeLibraryProject(
             "yaml-cpp", "ishiko-third-party_yaml-cpp", "master", config.downloads_dir,
             config.build_dir, "YAML_CPP_ROOT", "yaml-cpp", target))
@@ -314,22 +314,10 @@ class Projects:
             "Ishiko/Memory",
             "ishiko-cpp_memory",
             "build-files/$(compiler_short_name)/IshikoMemory.sln")
-#        self._add_ishiko_project(
-#            "Ishiko/Types",
-#            "ishiko-cpp_types",
-#            "build-files/$(compiler_short_name)/IshikoTypes.sln")
-#        self._add_ishiko_project(
-#            "Ishiko/Collections",
-#            "ishiko-cpp_collections",
-#            "build-files/$(compiler_short_name)/IshikoCollections.sln")
         self._add_ishiko_project(
             "Ishiko/Text",
             "ishiko-cpp_text",
             "build-files/$(compiler_short_name)/IshikoText.sln")
-#        self._add_ishiko_project(
-#            "Ishiko/Time",
-#            "ishiko-cpp_time",
-#            "build-files/$(compiler_short_name)/IshikoTime.sln")
         self._add_ishiko_project(
             "Ishiko/Process",
             "ishiko-cpp_process",
@@ -394,6 +382,26 @@ class Projects:
 #            "CodeSmithyIDE/CodeSmithy/CLI",
 #            "codesmithy",
 #            "cli/build-files/$(compiler_short_name)/CodeSmithyCLI.sln")
+        self._add_ishiko_project(
+            "Ishiko/Types",
+            "ishiko-cpp_types",
+            "build-files/$(compiler_short_name)/IshikoTypes.sln")
+        self._add_ishiko_project(
+            "Ishiko/Collections",
+            "ishiko-cpp_collections",
+            "build-files/$(compiler_short_name)/IshikoCollections.sln")
+        self._add_ishiko_project(
+            "Ishiko/Time",
+            "ishiko-cpp_time",
+            "build-files/$(compiler_short_name)/IshikoTime.sln")
+        self._add_ishiko_project(
+            "Ishiko/XML",
+            "ishiko-cpp_xml",
+            "build-files/$(compiler_short_name)/IshikoXML.sln")
+        self._add_ishiko_project(
+            "Ishiko/Diff",
+            "ishiko-cpp_diff",
+            "build-files/$(compiler_short_name)/IshikoDiff.sln")
         self._add_ishiko_project(
             "Ishiko/TestFramework/Core",
             "ishiko-cpp_test-framework",
